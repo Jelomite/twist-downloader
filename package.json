@@ -1,0 +1,32 @@
+{
+  "name": "twist-downloader",
+  "version": "0.0.1",
+  "description": "anime downloader for twist.moe",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Jelomite <moshesher1998@gmail.com>",
+  "scripts": {
+    "start": "babel-node index.js",
+    "build": "parcel build index.js --target node --bundle-node-modules",
+    "lint": "eslint --fix src/ index.js --ext .js"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "colors": "^1.4.0",
+    "crypto-js": "^4.0.0",
+    "dayjs": "^1.8.23",
+    "minimist": "^1.2.5",
+    "moment": "^2.24.0",
+    "progress": "^2.0.3",
+    "request-progress": "^3.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/node": "^7.8.7",
+    "@babel/preset-env": "^7.9.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0",
+    "eslint-import-resolver-node": "^0.3.3",
+    "eslint-plugin-import": "^2.20.2"
+  }
+}
