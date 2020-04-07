@@ -34,28 +34,55 @@ export const getSources = ({showID}) => {
 	});
 };
 
-export const downloadFile = async (url, path, onProgress) => {
+export const getShowData = ({showID}) => {
+	return new Promise((resolve, reject) => {
+		axios.get(`https://twist.moe/api/anime/${showID}/`, {
+			headers: {"x-access-token": "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR"},
+		}).then(response => {
+			resolve(response.data);
+		}).catch(reject);
+	});
+};
+
+export const downloadFile = async ({url, path, startRange = 0}, onProgress) => {
 	return new Promise((resolve, reject) => {
 		const fileName = url.substring(url.lastIndexOf("/") + 1);
 		axios.get(`https://twist.moe${url}`, {
 			headers: {
 				"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Safari/537.36",
 				"referer": "https://twist.moe",
-				"Range": "bytes=0-",
+				"Range": `bytes=${startRange}-`,
 				"Connection": "keep-alive",
 
 			},
 			responseType: "stream",
-		}).then(({data, headers}) => {
-			data.on("data", chunk => onProgress({
-				chunk,
-				headers,
-			}));
-			data.pipe(fs.createWriteStream(`${path}/${fileName}`));
-			data.on("end", resolve);
+		}).then(({data, headers, ...response}) => {
+			if (response.status === 416) {
+				reject({headers, ...response});
+			} else {
+				data.on("data", chunk => onProgress({
+					chunk,
+					headers,
+				}));
+				data.pipe(fs.createWriteStream(`${path}/${fileName}`, {
+					flags: "a",
+				}));
+				data.on("end", resolve);
+			}
 		}).catch(err => {
 			console.log(err);
 			reject();
 		});
 	});
+};
+
+export const getFileSize = file => {
+	try {
+		const stats = fs.statSync(file);
+		return stats.size; // in bytes.
+	} catch (err) {
+		if (err.code === "ENOENT") {
+			return 0; // file doesn't exist so return 0 bytes size.
+		}
+	}
 };

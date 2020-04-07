@@ -35,6 +35,13 @@ const main = async () => {
 
 		console.log(`  + Queued episodes : ${episodesStr}`);
 
+		// create subfolder in the downloads folder (if it doen't exist).
+		const {title} = await utils.getShowData(anime);
+		const folderPath = `${ARGV.destination}/${title}`;
+		if (!fs.existsSync(folderPath)) {
+			fs.mkdirSync(folderPath);
+		}
+
 		// now iterate over each episode in the specified anime.
 		for (let episode = start; episode <= end; episode++) {
 			// fancy printing of current downloading episode.
@@ -43,18 +50,22 @@ const main = async () => {
 			const episodeFilenameStr = episodeURL.substring(episodeURL.lastIndexOf("/") + 1);
 			console.log(`  - [${episodesProgressStr}] Downloading EP${episode} : '${episodeFilenameStr}'`.gray);
 
-			// create subfolder in the downloads folder (if it doen't exist).
-			const folderPath = `${ARGV.destination}/${anime.showID}`;
-			if (!fs.existsSync(folderPath)) {
-				fs.mkdirSync(folderPath);
-			}
+			const fileName = episodeURL.substring(episodeURL.lastIndexOf("/") + 1);
+			const existingFileSize = utils.getFileSize(`${folderPath}/${fileName}`);
+			// because we will use this value in the 'Range' header, this value cannot be equal to
+			// 100% of the file. {Range: "bytes=0-"} where 0 is the safeRange.
+			const safeRange = Math.max(existingFileSize - 1, 0);
 
-			let totalProgress = 0;
+			let totalProgress = existingFileSize;
 			let intervalProgress = 0; // will be reset each time we calculate the speed;
 			let startTime = new Date().getTime();
 			let speed = 0;
 
-			await utils.downloadFile(episodeURL, folderPath, state => {
+			await utils.downloadFile({
+				url: episodeURL,
+				path: folderPath,
+				startRange: safeRange,
+			}, state => {
 				totalProgress += state.chunk.length;
 				intervalProgress += state.chunk.length;
 
@@ -68,7 +79,7 @@ const main = async () => {
 					startTime = currentTime;
 				}
 
-				const totalData = state.headers["content-length"];
+				const totalData = parseInt(state.headers["content-length"]) + safeRange;
 				const progressPercent = totalProgress / totalData;
 				const barStr = `[${"#".repeat(Math.round(progressPercent * 40))}${"-".repeat(40 - Math.round(progressPercent * 40))}]`;
 				const downloadedStr = `${Math.round(totalProgress / 1000)}/${Math.round(totalData / 1000)}kb`;
