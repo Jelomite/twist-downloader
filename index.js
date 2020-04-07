@@ -15,7 +15,7 @@ const animes = ARGV._.map(str => utils.parseAnimeStr(str));
 
 // create directory of downloads if it doesn't already exist.
 if (!fs.existsSync(ARGV.destination)) {
-	fs.mkdirSync(ARGV.destination);
+	fs.mkdirSync(ARGV.destination, {recursive: true});
 }
 
 const main = async () => {
@@ -87,6 +87,10 @@ const main = async () => {
 				const etaStr = moment.duration(eta, "milliseconds").humanize();
 				process.stdout.write(`      ${barStr} ${downloadedStr} (${(progressPercent * 100).toFixed(2)}%) ${Math.round(speed)}kb/s ETA: ${etaStr}    \r`);
 			});
+
+			// after download complete, clear line and proceed to the next episode.
+			process.stdout.clearLine();
+			process.stdout.cursorTo(0);
 		}
 	}
 	console.log(`\n${"√".green} All tasks completed`.bold);
